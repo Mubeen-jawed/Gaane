@@ -10,7 +10,13 @@ APP_USER="${SUDO_USER:-$(whoami)}"
 
 echo "==> Installing system packages (nginx, certbot, python3 for yt-dlp)"
 apt-get update
-apt-get install -y curl ca-certificates nginx certbot python3-certbot-nginx python3
+apt-get install -y curl ca-certificates unzip git nginx certbot python3-certbot-nginx python3
+
+# yt-dlp needs a JavaScript runtime (Deno) to download from YouTube.
+if ! command -v deno >/dev/null; then
+  echo "==> Installing Deno (used by yt-dlp for YouTube)"
+  curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh -s -- -y
+fi
 
 if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
   echo "==> Installing Node.js 22"
@@ -46,6 +52,12 @@ chown -R "$APP_USER" "$APP_DIR/data"
 
 echo "==> Building and starting the app as $APP_USER"
 sudo -u "$APP_USER" bash "$APP_DIR/deploy/deploy.sh"
+
+# Keep YouTube downloads working: update yt-dlp + bot-check add-on daily at 04:17.
+CRON_LINE="17 4 * * * bash $APP_DIR/deploy/update-youtube.sh >> $APP_DIR/.youtube/update.log 2>&1"
+( sudo -u "$APP_USER" crontab -l 2>/dev/null | grep -v 'deploy/update-youtube.sh'; echo "$CRON_LINE" ) \
+  | sudo -u "$APP_USER" crontab -
+echo "==> Daily YouTube auto-update scheduled"
 
 # Start PM2 on boot for the app user.
 env PATH="$PATH" pm2 startup systemd -u "$APP_USER" --hp "$(eval echo "~$APP_USER")"

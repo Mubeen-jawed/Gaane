@@ -14,6 +14,10 @@ echo "==> Installing dependencies"
 # never binaries copied over from Windows.
 npm ci --no-audit --no-fund
 
+# npm ci reinstalls the bundled yt-dlp, so bring it (and the bot-check add-on) up to date.
+bash deploy/update-youtube.sh || echo "   (YouTube update step failed, continuing)"
+command -v deno >/dev/null || echo "   WARNING: Deno is not installed; YouTube downloads may fail. Run deploy/setup.sh."
+
 echo "==> Building"
 npm run build
 
