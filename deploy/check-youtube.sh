@@ -6,7 +6,7 @@ URL="${1:-https://www.youtube.com/watch?v=jNQXAC9IVRw}"
 YTDLP=./node_modules/youtube-dl-exec/bin/yt-dlp
 COOKIES=data/youtube-cookies.txt
 POT=.youtube/bgutil-ytdlp-pot-provider
-PROXY=$(grep -s '^YTDLP_PROXY=' .env.local | cut -d= -f2-)
+PROXY="${YTDLP_PROXY:-$(grep -s '^YTDLP_PROXY=' .env.local | cut -d= -f2-)}"
 
 echo "python3:   $(command -v python3 || echo MISSING) $(python3 --version 2>/dev/null)"
 echo "deno:      $(command -v deno || echo MISSING)"
